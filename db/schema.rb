@@ -20,8 +20,8 @@ ActiveRecord::Schema[7.0].define(version: 20_241_019_172_342) do
     t.integer 'task_id', null: false
     t.string 'brand', null: false
     t.string 'model', null: false
-    t.integer 'year', null: false
-    t.decimal 'price', null: false
+    t.string 'year', null: false
+    t.string 'price', null: false
     t.string 'url', null: false
     t.datetime 'created_at', null: false
     t.datetime 'updated_at', null: false

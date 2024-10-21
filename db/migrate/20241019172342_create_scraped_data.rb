@@ -6,8 +6,8 @@ class CreateScrapedData < ActiveRecord::Migration[7.0]
       t.integer :task_id, null: false
       t.string :brand, null: false, index: true
       t.string :model, null: false, index: true
-      t.integer :year, null: false, index: true
-      t.decimal :price, null: false
+      t.string :year, null: false, index: true
+      t.string :price, null: false
       t.string :url, null: false
 
       t.timestamps
