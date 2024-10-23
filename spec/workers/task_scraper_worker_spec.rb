@@ -7,6 +7,7 @@ RSpec.describe TaskScraperWorker, type: :worker do
   let(:task_data) do
     {
       'task_id' => 1,
+      'user_id' => 100,
       'url' => 'https://www.example.com'
     }
   end
@@ -46,7 +47,9 @@ RSpec.describe TaskScraperWorker, type: :worker do
     it 'updates the task status to "in progress"' do
       subject.perform(nil, task_data.to_json)
 
-      expect(TaskStatusUpdateJob).to have_received(:perform_async).with(task_id: task_data['task_id'], status: 1)
+      expect(TaskStatusUpdateJob).to have_received(:perform_async).with(
+        hash_including(status: 1, task_id: task_data['task_id'], user_id: task_data['user_id'])
+      )
     end
 
     it 'scrapes the website and stores the data correctly' do
@@ -65,7 +68,9 @@ RSpec.describe TaskScraperWorker, type: :worker do
     it 'updates the task status to "completed"' do
       subject.perform(nil, task_data.to_json)
 
-      expect(TaskStatusUpdateJob).to have_received(:perform_async).with(task_id: task_data['task_id'], status: 2)
+      expect(TaskStatusUpdateJob).to have_received(:perform_async).with(
+        hash_including(status: 2, task_id: task_data['task_id'], user_id: task_data['user_id'])
+      )
     end
 
     context 'when an error occurs during processing' do
@@ -74,7 +79,9 @@ RSpec.describe TaskScraperWorker, type: :worker do
 
         subject.perform(nil, task_data.to_json)
 
-        expect(TaskStatusUpdateJob).to have_received(:perform_async).with(task_id: task_data['task_id'], status: 3)
+        expect(TaskStatusUpdateJob).to have_received(:perform_async).with(
+          hash_including(status: 3, task_id: task_data['task_id'], user_id: task_data['user_id'])
+        )
       end
     end
   end

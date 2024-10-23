@@ -15,19 +15,19 @@ class TaskScraperWorker
   private
 
   def process_task(task_data, url)
-    update_task_status(task_data['task_id'], 1)
+    update_task_status(task_data['task_id'], task_data['user_id'], 1)
 
     scraped_data = scrape_website(url)
     store_scraped_data(task_data, scraped_data)
 
-    update_task_status(task_data['task_id'], 2)
+    update_task_status(task_data['task_id'], task_data['user_id'], 2)
   rescue StandardError => e
     Shoryuken.logger.error "Error processing task #{task_data['task_id']}: #{e.message}"
-    update_task_status(task_data['task_id'], 3)
+    update_task_status(task_data['task_id'], task_data['user_id'], 3)
   end
 
-  def update_task_status(task_id, status)
-    TaskStatusUpdateJob.perform_async({ task_id: task_id, status: status })
+  def update_task_status(task_id, user_id, status)
+    TaskStatusUpdateJob.perform_async({ task_id: task_id, user_id: user_id, status: status })
   end
 
   def scrape_website(url)

@@ -2,51 +2,29 @@
 
 require 'rails_helper'
 
-# rubocop:disable Metrics/BlockLength
-RSpec.describe TaskScraperWorker, type: :worker do
-  let(:task_data) do
-    {
-      'task_id' => 1,
-      'url' => 'https://www.example.com'
-    }
-  end
-
-  let(:scraped_data) { build(:scraped_data, task_id: task_data['task_id'], url: task_data['url']) }
-
-  let(:html_response) do
-    <<-HTML
-      <html>
-        <body>
-          <a class="check-here-fipe">
-            <strong>#{scraped_data.brand} #{scraped_data.model}</strong>
-          </a>
-          <strong id="VehiclePrincipalInformationYear">#{scraped_data.year}</strong>
-          <strong id="vehicleSendProposalPrice">R$ #{scraped_data.price}</strong>
-        </body>
-      </html>
-    HTML
-  end
+RSpec.describe TaskStatusUpdateJob, type: :worker do
+  let(:sqs_client) { instance_double(Aws::SQS::Client) }
+  let(:task_id) { 1 }
+  let(:user_id) { 100 }
+  let(:status) { 2 }
+  let(:queue_url) { 'https://sqs.us-east-1.amazonaws.com/123456789012/status_updates_queue' }
 
   before do
-    allow_any_instance_of(TaskScraperWorker).to receive(:download_html).and_return(html_response)
-    allow(Nokogiri::HTML).to receive(:parse).and_return(Nokogiri::HTML(html_response))
-    allow(ScrapedData).to receive(:create!)
-    allow(TaskStatusUpdateJob).to receive(:perform_async)
+    allow(Aws::SQS::Client).to receive(:new).and_return(sqs_client)
+    allow(sqs_client).to receive(:send_message)
+    ENV['STATUS_UPDATES_QUEUE_URL'] = queue_url
   end
 
   describe '#perform' do
-    it 'scrapes the website and stores the data correctly' do
-      subject.perform(nil, task_data.to_json)
+    it 'sends a message to the SQS queue with the correct task data' do
+      expected_message_body = { task_id: task_id, user_id: user_id, status: status }.to_json
 
-      expect(ScrapedData).to have_received(:create!).with(
-        task_id: scraped_data.task_id,
-        brand: scraped_data.brand,
-        model: scraped_data.model,
-        year: scraped_data.year,
-        price: "R$ #{scraped_data.price}",
-        url: scraped_data.url
+      subject.perform(task_id, user_id, status)
+
+      expect(sqs_client).to have_received(:send_message).with(
+        queue_url: queue_url,
+        message_body: expected_message_body
       )
     end
   end
 end
-# rubocop:enable Metrics/BlockLength

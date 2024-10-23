@@ -5,9 +5,9 @@ class TaskStatusUpdateJob
 
   shoryuken_options queue: 'status_updates_queue', auto_delete: true
 
-  def perform(task_id, status)
+  def perform(task_id, user_id, status)
     sqs_client = Aws::SQS::Client.new(region: ENV['AWS_REGION'])
-    message_body = { task_id: task_id, status: status }.to_json
+    message_body = { task_id: task_id, user_id: user_id, status: status }.to_json
 
     sqs_client.send_message({
                               queue_url: ENV['STATUS_UPDATES_QUEUE_URL'],
